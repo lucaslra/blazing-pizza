@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject HttpClient http
 @inject NavigationManager navigation
+@inject OrderState orderState
 
 <div class="main">
     <ul class="pizza-cards">
@@ -8,7 +9,7 @@
         {
             @foreach (var special in specials)
             {
-                <li @onclick="(()=>ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
+                <li @onclick="(()=> orderState.ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         @special.Description
@@ -21,15 +22,15 @@
 </div>
 
 <div class="sidebar">
-    @if (order.Pizzas.Any())
+    @if (orderState.Order.Pizzas.Any())
     {
         <div class="order-contents">
             <h2>Your order</h2>
 
-            @foreach (var configuredPizza in order.Pizzas)
+            @foreach (var configuredPizza in orderState.Order.Pizzas)
             {
                 <ConfiguredPizzaItem Pizza="configuredPizza"
-                                     OnRemoved="@(()=>RemoveConfigurePizza(configuredPizza))">
+                                     OnRemoved="@(() => orderState.RemoveConfigurePizza(configuredPizza))">
                 </ConfiguredPizzaItem>
             }
         </div>
@@ -39,68 +40,35 @@
         <div class="empty-cart">Choose a pizza<br />to get started</div>
     }
 
-    <div class="order-total @(order.Pizzas.Any() ? "":"hidden")">
+    <div class="order-total @(orderState.Order.Pizzas.Any() ? "":"hidden")">
         Total:
-        <span class="total-price">@order.GetFormattedTotalPrice()</span>
-        <button class="btn btn-warning" disabled="@(order.Pizzas.Count == 0)" @onclick="PlaceOrderAsync">
-            Order>
+        <span class="total-price">@orderState.Order.GetFormattedTotalPrice()</span>
+        <button class="btn btn-warning" disabled="@(orderState.Order.Pizzas.Count == 0)" @onclick="PlaceOrderAsync">
+            Order >
         </button>
     </div>
 </div>
 
-@if (showingConfiguringDialog)
+@if (orderState.ShowingConfigureDialog)
 {
-    <ConfigurePizzaDialog Pizza="configuringPizza"
-                          OnCancel="CancelConfigurePizzaDialog"
-                          OnConfirm="ConfirmConfigurePizzaDialog"></ConfigurePizzaDialog>
+    <ConfigurePizzaDialog Pizza="orderState.ConfiguringPizza"
+                          OnCancel="orderState.CancelConfigurePizzaDialog"
+                          OnConfirm="orderState.ConfirmConfigurePizzaDialog"></ConfigurePizzaDialog>
 }
 
 @code {
     IList<PizzaSpecial> specials;
-    Pizza configuringPizza;
-    bool showingConfiguringDialog;
-    Order order = new Order();
 
     protected async override Task OnInitializedAsync()
     {
         specials = await http.GetFromJsonAsync<List<PizzaSpecial>>("specials");
     }
 
-    void ConfirmConfigurePizzaDialog()
-    {
-        order.Pizzas.Add(configuringPizza);
-        configuringPizza = null;
-        showingConfiguringDialog = false;
-    }
-
-    void ShowConfigurePizzaDialog(PizzaSpecial special)
-    {
-        configuringPizza = new Pizza
-        {
-            Special = special,
-            SpecialId = special.Id,
-            Size = Pizza.DefaultSize,
-            Toppings = new List<PizzaTopping>()
-        };
-
-        showingConfiguringDialog = true;
-    }
-
-    void CancelConfigurePizzaDialog()
-    {
-        configuringPizza = null;
-        showingConfiguringDialog = false;
-    }
-
-    void RemoveConfigurePizza(Pizza configuredPizza)
-    {
-        order.Pizzas.Remove(configuredPizza);
-    }
     async Task PlaceOrderAsync()
     {
-        var response = await http.PostAsJsonAsync("orders", order);
+        var response = await http.PostAsJsonAsync("orders", orderState.Order);
         var newOrderId = await response.Content.ReadFromJsonAsync<int>();
-        order = new Order();
+        orderState.ResetOrder();
         navigation.NavigateTo($"myorders/{newOrderId}");
     }
 }
