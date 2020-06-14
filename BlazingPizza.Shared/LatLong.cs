@@ -2,6 +2,10 @@
 {
     public class LatLong
     {
+        public double Latitude { get; set; }
+
+        public double Longitude { get; set; }
+
         public LatLong()
         {
         }
@@ -11,10 +15,6 @@
             Latitude = latitude;
             Longitude = longitude;
         }
-
-        public double Latitude { get; set; }
-
-        public double Longitude { get; set; }
 
         public static LatLong Interpolate(LatLong start, LatLong end, double proportion)
         {

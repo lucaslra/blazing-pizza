@@ -1,4 +1,4 @@
-﻿@inject HttpClient http
+﻿@inject PizzaClient pizzaClient
 
 <div class="dialog-container">
     <div class="dialog">
@@ -35,9 +35,9 @@
                 {
                     <select class="custom-select" @onchange="ToppingSelected">
                         <option value="-1" disabled selected>(select)</option>
-                        @for (int i = 0; i < toppings.Count; i++)
+                        @foreach (var topping in toppings)
                         {
-                            <option value="@i">@toppings[i].Name - (£@(toppings[i].GetFormattedPrice()))</option>
+                            <option value="@topping.Id">@topping.Name - (£@(topping.GetFormattedPrice()))</option>
                         }
                     </select>
                 }
@@ -68,7 +68,7 @@
 </div>
 
 @code {
-    IList<Topping> toppings;
+    IEnumerable<Topping> toppings;
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
@@ -81,14 +81,14 @@
 
     protected async override Task OnInitializedAsync()
     {
-        toppings = await http.GetFromJsonAsync<List<Topping>>("toppings");
+        toppings = await pizzaClient.GetToppings();
     }
 
     private void ToppingSelected(ChangeEventArgs e)
     {
         if (int.TryParse((string)e.Value, out var index) && index >= 0)
         {
-            AddTopping(toppings[index]);
+            AddTopping(toppings.ElementAt(index));
         }
     }
     private void AddTopping(Topping topping)

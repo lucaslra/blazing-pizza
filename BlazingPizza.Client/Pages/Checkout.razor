@@ -1,5 +1,7 @@
 @page "/checkout"
-@inject HttpClient http
+@attribute [Authorize]
+
+@inject OrdersClient client
 @inject OrderState OrderState
 @inject NavigationManager navigation
 
@@ -33,14 +35,14 @@
         try
         {
             isSubmitting = true;
-            var response = await http.PostAsJsonAsync("orders", OrderState.Order);
+            var newOrderId = await client.PlaceOrder(OrderState.Order);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var newOrderId = await response.Content.ReadFromJsonAsync<int>();
-                OrderState.ResetOrder();
-                navigation.NavigateTo($"myorders/{newOrderId}");
-            }
+            OrderState.ResetOrder();
+            navigation.NavigateTo($"myorders/{newOrderId}");
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
         }
         finally
         {

@@ -1,7 +1,10 @@
 ﻿@page "/"
-@inject HttpClient http
+
+@inject PizzaClient pizzaClient
 @inject NavigationManager navigation
 @inject OrderState orderState
+
+@attribute [AllowAnonymous]
 
 <div class="main">
     <ul class="pizza-cards">
@@ -43,8 +46,8 @@
     <div class="order-total @(orderState.Order.Pizzas.Any() ? "":"hidden")">
         Total:
         <span class="total-price">@orderState.Order.GetFormattedTotalPrice()</span>
-        <a href="checkout"  class='@(orderState.Order.Pizzas.Count == 0 ? "btn btn-warning disabled" : "btn btn-warning")'>
-            Order >
+        <a href="checkout" class='@(orderState.Order.Pizzas.Count == 0 ? "btn btn-warning disabled" : "btn btn-warning")'>
+            Order>
         </a>
     </div>
 </div>
@@ -57,10 +60,17 @@
 }
 
 @code {
-    IList<PizzaSpecial> specials;
+    IEnumerable<PizzaSpecial> specials;
 
     protected async override Task OnInitializedAsync()
     {
-        specials = await http.GetFromJsonAsync<List<PizzaSpecial>>("specials");
+        try
+        {
+            specials = await pizzaClient.GetSpecials();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
 }

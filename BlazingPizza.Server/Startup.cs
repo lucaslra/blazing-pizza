@@ -10,29 +10,11 @@ namespace BlazingPizza.Server
 {
     public class Startup
     {
+        public IConfiguration Configuration { get; }
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
-
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc()
-                .AddNewtonsoftJson();
-
-            services.AddDbContext<PizzaStoreContext>(options => 
-                options.UseSqlite("Data Source=pizza.db"));
-
-            services.AddDefaultIdentity<PizzaStoreUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<PizzaStoreContext>();
-
-            services.AddIdentityServer()
-                .AddApiAuthorization<PizzaStoreUser, PizzaStoreContext>();
-
-            services.AddAuthentication()
-                .AddIdentityServerJwt();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -65,6 +47,24 @@ namespace BlazingPizza.Server
                 endpoints.MapRazorPages();
                 endpoints.MapFallbackToFile("index.html");
             });
+        }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc()
+                .AddNewtonsoftJson();
+
+            services.AddDbContext<PizzaStoreContext>(options =>
+                options.UseSqlite("Data Source=pizza.db"));
+
+            services.AddDefaultIdentity<PizzaStoreUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddEntityFrameworkStores<PizzaStoreContext>();
+
+            services.AddIdentityServer()
+                .AddApiAuthorization<PizzaStoreUser, PizzaStoreContext>();
+
+            services.AddAuthentication()
+                .AddIdentityServerJwt();
         }
     }
 }

@@ -1,19 +1,33 @@
-﻿using BlazingPizza.ComponentsLibrary.Map;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using BlazingPizza.ComponentsLibrary.Map;
 
 namespace BlazingPizza
 {
     public class OrderWithStatus
     {
+        private static LatLong ComputeStartPosition(Order order)
+        {
+            // Random but deterministic based on order ID
+            var rng = new Random(order.OrderId);
+            var distance = 0.01 + rng.NextDouble() * 0.02;
+            var angle = rng.NextDouble() * Math.PI * 2;
+            var offset = (distance * Math.Cos(angle), distance * Math.Sin(angle));
+            return new LatLong(order.DeliveryLocation.Latitude + offset.Item1, order.DeliveryLocation.Longitude + offset.Item2);
+        }
+
+        private static Marker ToMapMarker(string description, LatLong coords, bool showPopup = false)
+            => new Marker { Description = description, X = coords.Longitude, Y = coords.Latitude, ShowPopup = showPopup };
+
+        public readonly static TimeSpan DeliveryDuration = TimeSpan.FromMinutes(1);
         public readonly static TimeSpan PreparationDuration = TimeSpan.FromSeconds(10);
-        public readonly static TimeSpan DeliveryDuration = TimeSpan.FromMinutes(1); // Unrealistic, but more interesting to watch
+        // Unrealistic, but more interesting to watch
+
+        public List<Marker> MapMarkers { get; set; }
 
         public Order Order { get; set; }
 
         public string StatusText { get; set; }
-
-        public List<Marker> MapMarkers { get; set; }
 
         public static OrderWithStatus FromOrder(Order order)
         {
@@ -60,18 +74,5 @@ namespace BlazingPizza
                 MapMarkers = mapMarkers,
             };
         }
-
-        private static LatLong ComputeStartPosition(Order order)
-        {
-            // Random but deterministic based on order ID
-            var rng = new Random(order.OrderId);
-            var distance = 0.01 + rng.NextDouble() * 0.02;
-            var angle = rng.NextDouble() * Math.PI * 2;
-            var offset = (distance * Math.Cos(angle), distance * Math.Sin(angle));
-            return new LatLong(order.DeliveryLocation.Latitude + offset.Item1, order.DeliveryLocation.Longitude + offset.Item2);
-        }
-
-        static Marker ToMapMarker(string description, LatLong coords, bool showPopup = false)
-            => new Marker { Description = description, X = coords.Longitude, Y = coords.Latitude, ShowPopup = showPopup };
     }
 }

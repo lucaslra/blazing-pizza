@@ -1,14 +1,18 @@
 ﻿@page "/myorders"
-@inject HttpClient http
+@inject OrdersClient ordersClient
 
 <div class="main">
-    @if(ordersWithStatus==null){
+    @if (ordersWithStatus == null)
+    {
         <text>Loading...</text>
     }
-    else if(ordersWithStatus.Count==0){
+    else if (ordersWithStatus.Count() == 0)
+    {
         <h2>No orders placed</h2>
         <a class="btn btn-success" href="">Order some pizza</a>
-    }else{
+    }
+    else
+    {
         <div class="list-group orders-list">
             @foreach (var item in ordersWithStatus)
             {
@@ -35,10 +39,17 @@
 </div>
 
 @code{
-    IList<OrderWithStatus> ordersWithStatus;
+    IEnumerable<OrderWithStatus> ordersWithStatus;
 
     protected async override Task OnParametersSetAsync()
     {
-        ordersWithStatus = await http.GetFromJsonAsync<List<OrderWithStatus>>("orders");
+        try
+        {
+            ordersWithStatus = await ordersClient.GetOrders();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
 }

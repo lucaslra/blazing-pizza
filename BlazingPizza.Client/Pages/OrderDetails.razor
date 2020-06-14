@@ -2,17 +2,20 @@
 @implements IDisposable
 
 @using System.Threading
-@inject HttpClient http
+@inject OrdersClient ordersClient
 
 <div class="main">
-    @if(invalidOrder){
+    @if (invalidOrder)
+    {
         <h2>Nope</h2>
         <p>Sorry, this order could not be loaded.</p>
     }
-    else if(ordersWithStatus==null){
+    else if (ordersWithStatus == null)
+    {
         <text>Loading...</text>
     }
-    else{
+    else
+    {
         <div class="track-order">
             <div class="track-order-title">
                 <h2>
@@ -54,7 +57,11 @@
             try
             {
                 invalidOrder = false;
-                ordersWithStatus = await http.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
+                ordersWithStatus = await ordersClient.GetOrder(OrderId);
+            }
+            catch (AccessTokenNotAvailableException ex)
+            {
+                ex.Redirect();
             }
             catch (Exception ex)
             {
@@ -69,7 +76,8 @@
         }
     }
 
-    void IDisposable.Dispose(){
+    void IDisposable.Dispose()
+    {
         pollingCancellationToken?.Cancel();
     }
 }

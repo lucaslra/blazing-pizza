@@ -1,4 +1,4 @@
-﻿﻿using IdentityServer4.EntityFramework.Options;
+﻿using IdentityServer4.EntityFramework.Options;
 using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -7,22 +7,6 @@ namespace BlazingPizza.Server
 {
     public class PizzaStoreContext : ApiAuthorizationDbContext<PizzaStoreUser>
     {
-        public PizzaStoreContext(
-            DbContextOptions options,
-            IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
-        {
-        }
-
-        public DbSet<Order> Orders { get; set; }
-
-        public DbSet<Pizza> Pizzas { get; set; }
-
-        public DbSet<PizzaSpecial> Specials { get; set; }
-
-        public DbSet<Topping> Toppings { get; set; }
-
-        public DbSet<NotificationSubscription> NotificationSubscriptions { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -34,6 +18,22 @@ namespace BlazingPizza.Server
 
             // Inline the Lat-Long pairs in Order rather than having a FK to another table
             modelBuilder.Entity<Order>().OwnsOne(o => o.DeliveryLocation);
+        }
+
+        public DbSet<NotificationSubscription> NotificationSubscriptions { get; set; }
+
+        public DbSet<Order> Orders { get; set; }
+
+        public DbSet<Pizza> Pizzas { get; set; }
+
+        public DbSet<PizzaSpecial> Specials { get; set; }
+
+        public DbSet<Topping> Toppings { get; set; }
+
+        public PizzaStoreContext(
+                                                            DbContextOptions options,
+            IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
+        {
         }
     }
 }

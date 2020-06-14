@@ -13,6 +13,11 @@ namespace BlazingPizza.Server
     {
         private readonly PizzaStoreContext _db;
 
+        private string GetUserId()
+        {
+            return HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
+
         public NotificationsController(PizzaStoreContext db)
         {
             _db = db;
@@ -33,11 +38,6 @@ namespace BlazingPizza.Server
 
             await _db.SaveChangesAsync();
             return subscription;
-        }
-
-        private string GetUserId()
-        {
-            return HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
     }
 }
