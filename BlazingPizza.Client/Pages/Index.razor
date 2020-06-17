@@ -3,6 +3,7 @@
 @inject PizzaClient pizzaClient
 @inject NavigationManager navigation
 @inject OrderState orderState
+@inject IJSRuntime jsRuntime
 
 @attribute [AllowAnonymous]
 
@@ -33,7 +34,7 @@
             @foreach (var configuredPizza in orderState.Order.Pizzas)
             {
                 <ConfiguredPizzaItem Pizza="configuredPizza"
-                                     OnRemoved="@(() => orderState.RemoveConfigurePizza(configuredPizza))">
+                                     OnRemoved="@(() => RemovePizza(configuredPizza))">
                 </ConfiguredPizzaItem>
             }
         </div>
@@ -71,6 +72,14 @@
         catch (AccessTokenNotAvailableException ex)
         {
             ex.Redirect();
+        }
+    }
+
+    private async Task RemovePizza(Pizza configuredPizza)
+    {
+        if (await jsRuntime.Confirm($"Remove {configuredPizza.Special.Name} pizza from the order?"))
+        {
+            orderState.RemoveConfigurePizza(configuredPizza);
         }
     }
 }
