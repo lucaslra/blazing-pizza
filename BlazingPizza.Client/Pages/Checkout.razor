@@ -4,6 +4,9 @@
 @inject OrdersClient client
 @inject OrderState OrderState
 @inject NavigationManager navigation
+@inject IAccessTokenProvider TokenProvider
+@inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
 
 <div class="main">
     <EditForm Model="OrderState.Order.DeliveryAddress" OnValidSubmit="PlaceOrderAsync">
@@ -29,6 +32,31 @@
 
 @code {
     bool isSubmitting;
+
+    protected override void OnInitialized()
+    {
+        _ = RequestNotificationSubscriptionAsync();
+    }
+
+    async Task RequestNotificationSubscriptionAsync()
+    {
+        var tokenResult = await TokenProvider.RequestAccessToken();
+        if (tokenResult.TryGetToken(out var accessToken))
+        {
+            var subscription = await JSRuntime.InvokeAsync<NotificationSubscription>("blazorPushNotifications.requestSubscription");
+            if (subscription != null)
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put, "notifications/subscribe");
+                request.Content = JsonContent.Create(subscription);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
+                await HttpClient.SendAsync(request);
+            }
+        }
+        else
+        {
+            navigation.NavigateTo(tokenResult.RedirectUrl);
+        }
+    }
 
     async Task PlaceOrderAsync()
     {

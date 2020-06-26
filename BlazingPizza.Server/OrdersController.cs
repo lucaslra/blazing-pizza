@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebPush;
 
 namespace BlazingPizza.Server
 {
@@ -15,29 +17,6 @@ namespace BlazingPizza.Server
     public class OrdersController : Controller
     {
         private readonly PizzaStoreContext _db;
-
-        private static Task SendNotificationAsync(Order order, NotificationSubscription subscription, string message)
-        {
-            // This will be implemented later
-            return Task.CompletedTask;
-        }
-
-        private static async Task TrackAndSendNotificationsAsync(Order order, NotificationSubscription subscription)
-        {
-            // In a realistic case, some other backend process would track
-            // order delivery progress and send us notifications when it
-            // changes. Since we don't have any such process here, fake it.
-            await Task.Delay(OrderWithStatus.PreparationDuration);
-            await SendNotificationAsync(order, subscription, "Your order has been dispatched!");
-
-            await Task.Delay(OrderWithStatus.DeliveryDuration);
-            await SendNotificationAsync(order, subscription, "Your order is now delivered. Enjoy!");
-        }
-
-        private string GetUserId()
-        {
-            return HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        }
 
         public OrdersController(PizzaStoreContext db)
         {
@@ -110,6 +89,48 @@ namespace BlazingPizza.Server
             }
 
             return order.OrderId;
+        }
+
+        private static async Task SendNotificationAsync(Order order, NotificationSubscription subscription, string message)
+        {
+            var publicKey = "BBZDcXu3w6j0pS5pRp61A16GLy2ljnLLjtIa-1KcMEYRzXmcaTtdgk1Dai4n1tjMNTkH2b7e2Bb4LYybEYfRtr4";
+            var privateKey = "SUFMhiUZ3x1gWYKyXFPPqT3GrZwpM5N23HkiBDB4Nf8";
+
+            var pushSubscription = new PushSubscription(subscription.Url, subscription.P256dh, subscription.Auth);
+            var vapidDetails = new VapidDetails("mailto:user@name.com", publicKey, privateKey);
+            var webPushClient = new WebPushClient();
+
+            try
+            {
+                var payload = JsonSerializer.Serialize(new
+                {
+                    message,
+                    url = $"myorders/{order.OrderId}",
+                });
+
+                await webPushClient.SendNotificationAsync(pushSubscription, payload, vapidDetails);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error sending push notification: {ex.Message}");
+            }
+        }
+
+        private static async Task TrackAndSendNotificationsAsync(Order order, NotificationSubscription subscription)
+        {
+            // In a realistic case, some other backend process would track
+            // order delivery progress and send us notifications when it
+            // changes. Since we don't have any such process here, fake it.
+            await Task.Delay(OrderWithStatus.PreparationDuration);
+            await SendNotificationAsync(order, subscription, "Your order has been dispatched!");
+
+            await Task.Delay(OrderWithStatus.DeliveryDuration);
+            await SendNotificationAsync(order, subscription, "Your order is now delivered. Enjoy!");
+        }
+
+        private string GetUserId()
+        {
+            return HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
     }
 }
